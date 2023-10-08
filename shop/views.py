@@ -36,6 +36,19 @@ class CategoryViewSet(ModelViewSet):
             data['goods'] = GoodListSerializer(Good.objects.filter(category_id=category.id), many=True).data
         return Response(data)
 
+    def list(self, request, *args, **kwargs):
+        root_categories = []     # represents primary_keys only
+        serializer_data = {c['id']: c for c in CategoryListSerializer(Category.objects.all(), many=True).data}
+        for category_id, category_data in serializer_data.items():
+            if category_data['category_id']:
+                if serializer_data[category_data['category_id']].get('subcategories') is None:
+                    serializer_data[category_data['category_id']]['subcategories'] = [category_id]
+                else:
+                    serializer_data[category_data['category_id']]['subcategories'].append(category_id)
+            else:
+                root_categories.append(category_id)
+        return Response({"root_categories": root_categories, "categories": serializer_data})
+
 
 class GoodViewSet(RetrieveModelMixin,
                   CreateModelMixin,
